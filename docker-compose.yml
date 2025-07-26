@@ -1,0 +1,59 @@
+services:
+  qwen3-235b:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    volumes:
+      # Mount your model directory - adjust this path to your actual model location
+      - /mnt/ssd-4tb/ai_models/text-generation-webui/user_data/models:/home/llama/models:ro
+    environment:
+      # Basic server settings
+      - LLAMA_ARG_HOST=0.0.0.0
+      - LLAMA_ARG_PORT=8080
+      
+      # Model configuration - Qwen3-235B Q2_K_L
+      - LLAMA_ARG_MODEL=/home/llama/models/Qwen3-235B-A22B-Instruct-2507-GGUF/Q2_K_L/Qwen3-235B-A22B-Instruct-2507-Q2_K_L-00001-of-00002.gguf
+      
+      # Context and performance settings
+      - LLAMA_ARG_CTX_SIZE=20000  # Reduced for GPU memory
+      - LLAMA_ARG_N_PREDICT=-1    # Unlimited generation
+      - LLAMA_ARG_BATCH_SIZE=256
+      - LLAMA_ARG_UBATCH_SIZE=256
+      
+      # Multi-GPU configuration - adjusted for Docker GPU order
+      # Docker order: RTX 3090 Ti, RTX 3090, RTX 3090, RTX 3090, RTX A4000
+      # Tensor split: 1,1,1,1,0.7 (A4000 gets 0.7 as it's now Device 4)
+      - LLAMA_ARG_TENSOR_SPLIT=1,1,1,1,0.65
+      - LLAMA_ARG_N_GPU_LAYERS=95  # Try partial offload first
+      
+      # Flash attention and optimization
+      - LLAMA_ARG_FLASH_ATTN=true
+      - LLAMA_ARG_NO_MMAP=false
+      - LLAMA_ARG_MLOCK=false
+      
+      # Threading and performance
+      - LLAMA_ARG_THREADS=16
+      - LLAMA_ARG_THREADS_BATCH=16
+      
+      # API settings
+      - LLAMA_ARG_PARALLEL=4
+      - LLAMA_ARG_CONT_BATCHING=true
+      
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    
+    restart: unless-stopped
+    
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
