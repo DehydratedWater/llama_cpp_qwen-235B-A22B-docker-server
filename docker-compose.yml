@@ -39,11 +39,11 @@ services:
       - LLAMA_ARG_MLOCK=false
       
       # Threading and performance - increased for multi-GPU
-      - LLAMA_ARG_THREADS=24
-      - LLAMA_ARG_THREADS_BATCH=24
+      - LLAMA_ARG_THREADS=12
+      - LLAMA_ARG_THREADS_BATCH=12
       
       # API settings - optimized for concurrent requests
-      - LLAMA_ARG_PARALLEL=8        # 2 concurrent users (81920/2 = 40960 ctx per user)
+      - LLAMA_ARG_PARALLEL=10        # 2 concurrent users (81920/2 = 40960 ctx per user)
       - LLAMA_ARG_CONT_BATCHING=true # Enable continuous batching
       - LLAMA_ARG_CACHE_TYPE_K=f16  # Match model quantization level
       - LLAMA_ARG_CACHE_TYPE_V=f16
