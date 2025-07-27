@@ -110,9 +110,11 @@ Please provide a comprehensive response with specific examples and actionable re
         payload = {
             "prompt": prompt,
             "n_predict": 200,  # Limit tokens for consistent comparison
-            "temperature": 0.7 + random.uniform(-0.2, 0.2),  # Vary temperature slightly
-            "top_p": 0.9 + random.uniform(-0.1, 0.1),
-            "top_k": 40 + random.randint(-10, 10),
+            "temperature": 0.7,
+            "top_p": 0.80,
+            "top_k": 20,
+            "min_p": 0.00,
+            "presence_penalty": 0.5,  # Reduce repetitions
             "stream": True
         }
         

@@ -43,11 +43,17 @@ services:
       - LLAMA_ARG_THREADS_BATCH=12
       
       # API settings - optimized for concurrent requests
-      - LLAMA_ARG_PARALLEL=10        # 2 concurrent users (81920/2 = 40960 ctx per user)
+      - LLAMA_ARG_PARALLEL=10        # 10 concurrent users (81920/10 = 8192 ctx per user)
       - LLAMA_ARG_CONT_BATCHING=true # Enable continuous batching
       - LLAMA_ARG_CACHE_TYPE_K=f16  # Match model quantization level
       - LLAMA_ARG_CACHE_TYPE_V=f16
       - LLAMA_ARG_DEFRAG_THOLD=0.1   # Defrag threshold for better memory usage
+      
+      # Default generation parameters for chat completions
+      - LLAMA_ARG_TOP_K=20
+      - LLAMA_ARG_MIN_P=0.00
+      - LLAMA_ARG_TOP_P=0.80
+      - LLAMA_ARG_PRESENCE_PENALTY=0.5
       # - LLAMA_ARG_LOOKUP_CACHE_STATIC=/tmp/lookup.bin # Static lookup cache
       # - LLAMA_ARG_LOOKUP_CACHE_DYNAMIC=/tmp/dynamic.bin # Dynamic lookup cache
       
