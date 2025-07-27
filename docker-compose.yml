@@ -22,7 +22,7 @@ services:
       - LLAMA_ARG_MODEL=/home/llama/models/Qwen3-235B-A22B-Instruct-2507-GGUF/Q2_K_L/Qwen3-235B-A22B-Instruct-2507-Q2_K_L-00001-of-00002.gguf
       
       # Context and performance settings
-      - LLAMA_ARG_CTX_SIZE=65536  # Optimized for parallel requests
+      - LLAMA_ARG_CTX_SIZE=81920  # 80K context (power of 2: 2^16 + 2^14)
       - LLAMA_ARG_N_PREDICT=-1    # Unlimited generation
       - LLAMA_ARG_BATCH_SIZE=512  # Logical batch size
       - LLAMA_ARG_UBATCH_SIZE=256 # Physical batch size
@@ -39,13 +39,13 @@ services:
       - LLAMA_ARG_MLOCK=false
       
       # Threading and performance - increased for multi-GPU
-      - LLAMA_ARG_THREADS=32
-      - LLAMA_ARG_THREADS_BATCH=32
+      - LLAMA_ARG_THREADS=12
+      - LLAMA_ARG_THREADS_BATCH=12
       
       # API settings - optimized for concurrent requests
-      - LLAMA_ARG_PARALLEL=8        # 8 concurrent users (32768/8 = 4096 ctx per user)
+      - LLAMA_ARG_PARALLEL=4        # 2 concurrent users (81920/2 = 40960 ctx per user)
       - LLAMA_ARG_CONT_BATCHING=true # Enable continuous batching
-      - LLAMA_ARG_CACHE_TYPE_K=f16   # Optimize KV cache
+      - LLAMA_ARG_CACHE_TYPE_K=f16  # Match model quantization level
       - LLAMA_ARG_CACHE_TYPE_V=f16
       - LLAMA_ARG_DEFRAG_THOLD=0.1   # Defrag threshold for better memory usage
       # - LLAMA_ARG_LOOKUP_CACHE_STATIC=/tmp/lookup.bin # Static lookup cache
