@@ -39,8 +39,8 @@ services:
       - LLAMA_ARG_MLOCK=false
       
       # Threading and performance - increased for multi-GPU
-      - LLAMA_ARG_THREADS=12
-      - LLAMA_ARG_THREADS_BATCH=12
+      - LLAMA_ARG_THREADS=24
+      - LLAMA_ARG_THREADS_BATCH=24
       
       # API settings - optimized for concurrent requests
       - LLAMA_ARG_PARALLEL=8        # 2 concurrent users (81920/2 = 40960 ctx per user)

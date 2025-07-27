@@ -60,6 +60,24 @@ class ConcurrentTester:
         
         return prompts
     
+    def generate_context_length_prompt(self, target_tokens: int) -> str:
+        """Generate a prompt with approximately target_tokens length"""
+        base_text = """In the realm of artificial intelligence and machine learning, we are witnessing unprecedented advances in natural language processing, computer vision, and autonomous systems. These technologies are revolutionizing industries from healthcare and finance to transportation and entertainment. The development of large language models has particularly transformed how we interact with AI systems, enabling more natural and context-aware conversations. Meanwhile, computer vision algorithms are achieving human-level performance in image recognition tasks, enabling applications in medical diagnosis, autonomous vehicles, and security systems. The integration of these technologies is creating new possibilities for automation, decision-making, and human-AI collaboration across various domains."""
+        
+        # Repeat and expand text to reach target length
+        words = base_text.split()
+        current_text = base_text
+        
+        while len(current_text.split()) < target_tokens * 0.9:  # Account for tokenization differences
+            # Add varied content to avoid repetition
+            expansion = f" Furthermore, the implications of these advances extend to {random.choice(['healthcare', 'education', 'manufacturing', 'research', 'entertainment', 'communication'])} where {random.choice(['efficiency', 'accuracy', 'innovation', 'accessibility', 'scalability', 'reliability'])} improvements are particularly notable."
+            current_text += expansion
+        
+        # Add a specific question at the end
+        question = f"\n\nBased on this comprehensive overview, please analyze the key trends and provide your insights on the most promising developments. What are the potential challenges and opportunities ahead?"
+        
+        return current_text + question
+    
     def generate_long_prompts(self, count: int) -> List[str]:
         """Generate varied long context prompts"""
         base_contexts = [
@@ -172,6 +190,43 @@ Please provide a comprehensive response with specific examples and actionable re
                 error=str(e)
             )
     
+    async def run_context_scaling_test(self):
+        """Test individual requests with different context lengths"""
+        context_sizes = [1000, 5000, 10000, 20000, 40000]  # Token counts
+        
+        print(f"📏 Starting context scaling test: {context_sizes} token contexts")
+        print(f"📅 Test started at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        
+        async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=600)) as session:
+            for size in context_sizes:
+                print(f"\n🔍 Testing {size:,} token context...")
+                prompt = self.generate_context_length_prompt(size)
+                
+                start_time = time.time()
+                result = await self.send_request(session, prompt, f"ctx_{size}", f"{size}k")
+                test_time = time.time() - start_time
+                
+                if result.error:
+                    print(f"   ❌ Failed: {result.error}")
+                else:
+                    print(f"   ✅ Success: {result.analysis_time:.3f}s analysis, {result.inference_time:.3f}s inference, {result.tokens_per_second:.1f} tok/s")
+                
+                self.results.append(result)
+                
+                # Wait between tests to avoid overwhelming
+                if size != context_sizes[-1]:
+                    await asyncio.sleep(2)
+        
+        print(f"\n📊 CONTEXT SCALING RESULTS:")
+        print(f"{'Context':<10} {'Prompt Tokens':<12} {'Analysis':<10} {'Inference':<10} {'Total':<8} {'TPS':<6} {'Status'}")
+        print(f"{'-'*70}")
+        
+        for result in self.results:
+            status = "✅" if not result.error else "❌"
+            print(f"{result.context_type:<10} {result.prompt_tokens:<12} "
+                  f"{result.analysis_time:<10.3f} {result.inference_time:<10.3f} "
+                  f"{result.total_time:<8.3f} {result.tokens_per_second:<6.1f} {status}")
+    
     async def run_concurrent_test(self, short_requests: int = 3, long_requests: int = 2):
         """Run concurrent test with mixed short and long requests"""
         print(f"🚀 Starting concurrent test: {short_requests} short + {long_requests} long requests")
@@ -273,9 +328,29 @@ Please provide a comprehensive response with specific examples and actionable re
 
 async def main():
     """Main test function"""
+    import sys
+    
     tester = ConcurrentTester()
     
-    # Test different concurrent loads
+    # Check command line arguments
+    if len(sys.argv) > 1 and sys.argv[1] == "context":
+        # Run context scaling test only
+        await tester.run_context_scaling_test()
+        return
+    
+    # Run context scaling test first
+    print("🧪 PHASE 1: Context Scaling Test (Individual Requests)")
+    print("=" * 60)
+    await tester.run_context_scaling_test()
+    tester.results.clear()
+    
+    print("\n⏸️  Waiting 15 seconds before concurrent tests...")
+    await asyncio.sleep(15)
+    
+    # Then run concurrent tests
+    print("\n🧪 PHASE 2: Concurrent Load Tests")
+    print("=" * 60)
+    
     test_configs = [
         (2, 1),  # 2 short, 1 long
         (3, 2),  # 3 short, 2 long  
