@@ -8,6 +8,11 @@ services:
     volumes:
       # Mount your model directory - adjust this path to your actual model location
       - /mnt/ssd-4tb/ai_models/text-generation-webui/user_data/models:/home/llama/models:ro
+      # Tmpfs for cache files (RAM-based for speed)
+      - type: tmpfs
+        target: /tmp
+        tmpfs:
+          size: 4G
     environment:
       # Basic server settings
       - LLAMA_ARG_HOST=0.0.0.0
@@ -17,10 +22,10 @@ services:
       - LLAMA_ARG_MODEL=/home/llama/models/Qwen3-235B-A22B-Instruct-2507-GGUF/Q2_K_L/Qwen3-235B-A22B-Instruct-2507-Q2_K_L-00001-of-00002.gguf
       
       # Context and performance settings
-      - LLAMA_ARG_CTX_SIZE=65536  # Reduced for GPU memory
+      - LLAMA_ARG_CTX_SIZE=65536  # Optimized for parallel requests
       - LLAMA_ARG_N_PREDICT=-1    # Unlimited generation
-      - LLAMA_ARG_BATCH_SIZE=1024
-      - LLAMA_ARG_UBATCH_SIZE=4096
+      - LLAMA_ARG_BATCH_SIZE=512  # Logical batch size
+      - LLAMA_ARG_UBATCH_SIZE=256 # Physical batch size
       
       # Multi-GPU configuration - adjusted for Docker GPU order
       # Docker order: RTX 3090 Ti, RTX 3090, RTX 3090, RTX 3090, RTX A4000
@@ -37,9 +42,14 @@ services:
       - LLAMA_ARG_THREADS=32
       - LLAMA_ARG_THREADS_BATCH=32
       
-      # API settings - increased for better GPU utilization
-      - LLAMA_ARG_PARALLEL=4
-      - LLAMA_ARG_CONT_BATCHING=true
+      # API settings - optimized for concurrent requests
+      - LLAMA_ARG_PARALLEL=8        # 8 concurrent users (32768/8 = 4096 ctx per user)
+      - LLAMA_ARG_CONT_BATCHING=true # Enable continuous batching
+      - LLAMA_ARG_CACHE_TYPE_K=f16   # Optimize KV cache
+      - LLAMA_ARG_CACHE_TYPE_V=f16
+      - LLAMA_ARG_DEFRAG_THOLD=0.1   # Defrag threshold for better memory usage
+      # - LLAMA_ARG_LOOKUP_CACHE_STATIC=/tmp/lookup.bin # Static lookup cache
+      # - LLAMA_ARG_LOOKUP_CACHE_DYNAMIC=/tmp/dynamic.bin # Dynamic lookup cache
       
     deploy:
       resources:
